@@ -372,6 +372,68 @@ observer.observe(document.body, {
 // Первичный запуск
 document.querySelectorAll('.cart-notice').forEach(autoHideNotice);
 
+// Фильтры каталога (дропдауны)
+(function () {
+    var dropdowns = document.querySelectorAll('.filter-dropdown');
+    if (!dropdowns.length) return;
+
+    // Открыть / закрыть панель
+    function openDropdown(dd) {
+        dd.querySelector('.filter-dropdown__panel').classList.add('is-open');
+    }
+    function closeDropdown(dd) {
+        dd.querySelector('.filter-dropdown__panel').classList.remove('is-open');
+    }
+    function closeAll(except) {
+        dropdowns.forEach(function (dd) {
+            if (dd !== except) closeDropdown(dd);
+        });
+    }
+
+    dropdowns.forEach(function (dd) {
+        var toggle = dd.querySelector('.filter-dropdown__toggle');
+        var panel  = dd.querySelector('.filter-dropdown__panel');
+        var param  = dd.dataset.param;
+
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            var isOpen = panel.classList.contains('is-open');
+            closeAll(dd);
+            isOpen ? closeDropdown(dd) : openDropdown(dd);
+        });
+
+        // Применить фильтр при изменении чекбокса
+        panel.addEventListener('change', function (e) {
+            var input = e.target;
+            if (!input) return;
+
+            var url = new URL(window.location.href);
+            url.searchParams.delete('paged'); // сбрасываем пагинацию
+
+            if (input.type === 'radio') {
+                // Сортировка — одно значение
+                url.searchParams.set(param, input.value);
+            } else {
+                // Фильтр — множественный выбор через запятую
+                var checked = Array.from(panel.querySelectorAll('input:checked'))
+                    .map(function (i) { return i.value; });
+                if (checked.length) {
+                    url.searchParams.set(param, checked.join(','));
+                } else {
+                    url.searchParams.delete(param);
+                }
+            }
+
+            window.location.href = url.toString();
+        });
+    });
+
+    // Клик вне дропдауна — закрыть все
+    document.addEventListener('click', function () {
+        closeAll(null);
+    });
+}());
+
 // Бренды: алфавитный фильтр
 (function () {
     const filterLinks = document.querySelectorAll('.brands-filter .products-filter__link');

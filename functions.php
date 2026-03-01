@@ -286,6 +286,40 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 }
 
 
+// Фильтрация каталога по бренду и категории через URL-параметры
+add_action( 'pre_get_posts', function ( $query ) {
+    if ( is_admin() || ! $query->is_main_query() ) return;
+    if ( ! is_shop() && ! is_product_category() && ! is_product_tag() ) return;
+
+    $tax_query = (array) $query->get( 'tax_query' );
+
+    // Фильтр по бренду (?filter_brand=slug1,slug2)
+    if ( ! empty( $_GET['filter_brand'] ) ) {
+        $slugs = array_map( 'sanitize_title', explode( ',', $_GET['filter_brand'] ) );
+        $tax_query[] = [
+            'taxonomy' => 'product_brand',
+            'field'    => 'slug',
+            'terms'    => $slugs,
+            'operator' => 'IN',
+        ];
+    }
+
+    // Фильтр по категории на странице магазина (?filter_cat=slug1,slug2)
+    if ( is_shop() && ! empty( $_GET['filter_cat'] ) ) {
+        $slugs = array_map( 'sanitize_title', explode( ',', $_GET['filter_cat'] ) );
+        $tax_query[] = [
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => $slugs,
+            'operator' => 'IN',
+        ];
+    }
+
+    if ( ! empty( $tax_query ) ) {
+        $query->set( 'tax_query', $tax_query );
+    }
+} );
+
 add_filter('get_custom_logo', function($html) {
     return str_replace(
         'custom-logo-link',
