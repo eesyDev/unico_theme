@@ -285,6 +285,7 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
 
+
 add_filter('get_custom_logo', function($html) {
     return str_replace(
         'custom-logo-link',

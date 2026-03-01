@@ -2934,6 +2934,13 @@ body.is-menu-open {
     content: none
 }
 
+.brands .products-filter__link.active {
+    color: var(--black);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
 .brands__grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

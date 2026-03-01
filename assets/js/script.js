@@ -371,3 +371,44 @@ observer.observe(document.body, {
 
 // Первичный запуск
 document.querySelectorAll('.cart-notice').forEach(autoHideNotice);
+
+// Бренды: алфавитный фильтр
+(function () {
+    const filterLinks = document.querySelectorAll('.brands-filter .products-filter__link');
+    if (!filterLinks.length) return;
+
+    // Плавный скролл к секции по клику на букву
+    filterLinks.forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').slice(1);
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            const offset = target.getBoundingClientRect().top + window.scrollY - 100;
+            window.scrollTo({ top: offset, behavior: 'smooth' });
+        });
+    });
+
+    // Подсветка активной буквы при скролле
+    const groups = document.querySelectorAll('.brands-group[id]');
+    if (!groups.length) return;
+
+    function updateActiveLink() {
+        const scrollY = window.scrollY + 120;
+        let currentId = null;
+
+        groups.forEach(function (group) {
+            if (group.offsetTop <= scrollY) {
+                currentId = group.id;
+            }
+        });
+
+        filterLinks.forEach(function (link) {
+            const href = link.getAttribute('href').slice(1);
+            link.classList.toggle('active', href === currentId);
+        });
+    }
+
+    window.addEventListener('scroll', updateActiveLink, { passive: true });
+    updateActiveLink();
+}());
