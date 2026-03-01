@@ -413,6 +413,118 @@ add_action( 'wp_enqueue_scripts', function () {
     ) );
 }, 20 );
 
+/* ── AJAX фильтр + пагинация каталога ── */
+add_action( 'wp_ajax_unico_filter_products',        'unico_filter_products_handler' );
+add_action( 'wp_ajax_nopriv_unico_filter_products', 'unico_filter_products_handler' );
+
+function unico_filter_products_handler() {
+    check_ajax_referer( 'unico_load_more_nonce', 'nonce' );
+
+    $page     = max( 1, intval( $_POST['page'] ?? 1 ) );
+    $per_page = max( 1, intval( $_POST['per_page'] ?? get_option( 'posts_per_page', 12 ) ) );
+    $orderby  = sanitize_key( $_POST['orderby'] ?? 'menu_order' );
+    $cat_id   = intval( $_POST['cat'] ?? 0 );
+
+    // tax_query — базовый: исключаем скрытые товары
+    $tax_query = array(
+        array(
+            'taxonomy' => 'product_visibility',
+            'field'    => 'name',
+            'terms'    => array( 'exclude-from-catalog' ),
+            'operator' => 'NOT IN',
+        ),
+    );
+
+    // Фильтр по категории
+    $filter_cat = ! empty( $_POST['filter_cat'] )
+        ? array_map( 'sanitize_title', explode( ',', $_POST['filter_cat'] ) )
+        : array();
+
+    if ( ! empty( $filter_cat ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => $filter_cat,
+            'operator' => 'IN',
+        );
+    } elseif ( $cat_id ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_cat',
+            'field'    => 'term_id',
+            'terms'    => $cat_id,
+        );
+    }
+
+    // Фильтр по бренду
+    $filter_brand = ! empty( $_POST['filter_brand'] )
+        ? array_map( 'sanitize_title', explode( ',', $_POST['filter_brand'] ) )
+        : array();
+
+    if ( ! empty( $filter_brand ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_brand',
+            'field'    => 'slug',
+            'terms'    => $filter_brand,
+            'operator' => 'IN',
+        );
+    }
+
+    // Фильтры по WooCommerce атрибутам (pa_size, pa_color и т.д.)
+    foreach ( wc_get_attribute_taxonomies() as $attr ) {
+        $param = 'filter_' . $attr->attribute_name;
+        if ( ! empty( $_POST[ $param ] ) ) {
+            $vals = array_map( 'sanitize_title', explode( ',', $_POST[ $param ] ) );
+            $tax_query[] = array(
+                'taxonomy' => 'pa_' . $attr->attribute_name,
+                'field'    => 'slug',
+                'terms'    => $vals,
+                'operator' => 'IN',
+            );
+        }
+    }
+
+    $ordering = WC()->query->get_catalog_ordering_args( $orderby );
+
+    $args = array(
+        'post_type'      => 'product',
+        'post_status'    => 'publish',
+        'posts_per_page' => $per_page,
+        'paged'          => $page,
+        'orderby'        => $ordering['orderby'],
+        'order'          => $ordering['order'],
+        'tax_query'      => $tax_query,
+    );
+
+    if ( ! empty( $ordering['meta_key'] ) ) {
+        $args['meta_key'] = $ordering['meta_key'];
+    }
+
+    $query = new WP_Query( $args );
+
+    ob_start();
+    if ( $query->have_posts() ) {
+        while ( $query->have_posts() ) {
+            $query->the_post();
+            global $product;
+            $product = wc_get_product( get_the_ID() );
+            if ( $product && $product->is_visible() ) {
+                wc_get_template_part( 'content', 'product' );
+            }
+        }
+        wp_reset_postdata();
+    }
+    $html = ob_get_clean();
+
+    wp_send_json( array(
+        'products'  => $html,
+        'total'     => (int) $query->found_posts,
+        'max_pages' => (int) $query->max_num_pages,
+        'shown'     => (int) min( $page * $per_page, $query->found_posts ),
+        'page'      => $page,
+        'per_page'  => $per_page,
+    ) );
+}
+
 /* ── Load More: товары каталога ── */
 add_action( 'wp_ajax_unico_load_more_products',        'unico_load_more_products_handler' );
 add_action( 'wp_ajax_nopriv_unico_load_more_products', 'unico_load_more_products_handler' );

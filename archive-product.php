@@ -130,7 +130,9 @@ $sort_options = [
             </div>
         </div>
 
-        <div class="catalog__items">
+        <div class="catalog__items"
+             data-per-page="<?php echo (int) get_option( 'posts_per_page', 12 ); ?>"
+             data-cat="<?php echo is_product_category() ? (int) get_queried_object_id() : 0; ?>">
             <?php if ( have_posts() ) : ?>
                 <?php while ( have_posts() ) : the_post(); ?>
                     <?php wc_get_template_part( 'content', 'product' ); ?>
