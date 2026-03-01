@@ -1,0 +1,252 @@
+<?php
+/**
+ * The header for our theme
+ *
+ * This is the template that displays all of the <head> section and everything up until <div id="content">
+ *
+ * @link https://developer.wordpress.org/themes/basics/template-files/#template-partials
+ *
+ * @package unico
+ */
+
+?>
+<!DOCTYPE html>
+<html <?php language_attributes(); ?> >
+<head>
+    <meta charset="<?php bloginfo( 'charset' ); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php wp_head(); ?>
+</head>
+
+<body <?php body_class(); ?>>
+    <?php wp_body_open(); ?>
+
+    <div id="page" class="site">
+        <!-- <a class="skip-link screen-reader-text" href="#primary"><?php esc_html_e( 'Skip to content', 'unicomoda' ); ?></a> -->
+
+        <header class="header">
+            <div class="header__pre">
+                <div class="container">
+                    <div class="header__pre-content">Бесплатная доставка по Санкт-Петербургу и России при покупке на сумму от 20 000 ₽</div>
+                </div>
+            </div>
+            <div class="header__main">
+                <div class="container">
+                    <div class="header__main-wrapper">
+                        <div class="header__left">
+                        <nav>
+                            <ul class="header__menu">
+                                <?php
+                                $locations = get_nav_menu_locations();
+                                $menu_id = $locations['header_menu'] ;
+                                $main_menu = wp_get_nav_menu_items($menu_id);
+
+                                if ($main_menu) :
+                                    foreach ($main_menu as $item) :
+                                        // Выводим только родительские элементы (у которых parent == 0)
+                                        if ($item->menu_item_parent == 0) : 
+                                            
+                                            // Проверяем, это "Каталог" или обычная ссылка
+                                            $is_catalog = (mb_strtolower($item->title) == 'каталог');
+                                            $is_sales = (mb_strtolower($item->title) == 'скидки');
+                                            $li_class = $is_catalog ? 'header__menu-item header__menu-item--catalog' : ($is_sales ? 'sale-color' : '');
+                                            ?>
+                                            
+                                            <li class="<?php echo $li_class; ?>">
+                                                <a href="<?php echo $item->url; ?>" class="link--hover-grey">
+                                                    <?php echo $item->title; ?>
+                                                </a>
+
+                                                <?php if ($is_catalog) : ?>
+                                                    <div class="mega-menu">
+                                                        <div class="mega-menu__overlay" aria-hidden="true"></div>
+                                                        <div class="mega-menu__content container">
+                                                            
+                                                            <?php
+                                                            // 1. Ищем детей "Каталога" (Верхняя одежда, Одежда, Аксессуары)
+                                                            foreach ($main_menu as $sub_column) :
+                                                                if ($sub_column->menu_item_parent == $item->ID) : ?>
+                                                                    
+                                                                    <div class="mega-menu__column">
+                                                                        <div class="mega-menu__title"><?php echo $sub_column->title; ?></div>
+                                                                        <ul class="mega-menu__list">
+                                                                            <?php
+                                                                            // 2. Ищем детей для каждой колонки (куртки, платья и т.д.)
+                                                                            foreach ($main_menu as $sub_item) :
+                                                                                if ($sub_item->menu_item_parent == $sub_column->ID) : ?>
+                                                                                    <li><a href="<?php echo $sub_item->url; ?>"><?php echo $sub_item->title; ?></a></li>
+                                                                                <?php endif;
+                                                                            endforeach; ?>
+                                                                        </ul>
+                                                                    </div>
+
+                                                                <?php endif;
+                                                            endforeach; ?>
+
+                                                            <div class="mega-menu__promo">
+                                                                <div class="mega-menu__promo-image">
+                                                                    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/collection.jpg" alt="collection-image">
+                                                                </div>
+                                                                <div class="mega-menu__promo-info">
+                                                                    <div class="mega-menu__promo-badge">Новое поступление</div>
+                                                                    <div class="mega-menu__promo-title">8PM Collection</div>
+                                                                    <a href="" class="mega-menu__promo-link">Подробнее →</a>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </li>
+
+                                        <?php endif;
+                                    endforeach;
+                                endif; ?>
+                            </ul>
+                        </nav>
+                        </div>
+                        <div class="header__middle">
+                            <a href="/" class="header__logo">
+                                <img src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.svg" alt="unico-logo" class="header__logo">
+                            </a>
+                            
+                        </div>
+                        <div class="header__right">
+                            <div class="header__note">
+                                Женская одежда. Онлайн-бутик <span class="custom-br"></span> итальянских брендов. СПб
+                            </div>
+                            <div class="header__actions">
+                                <div class="header-search">
+                                    <button class="header-search__toggle" type="button" aria-label="Поиск">
+                                        <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12.0876 3.15009C17.023 3.15066 21.0242 7.15208 21.0242 12.0876C21.0239 14.3968 20.1466 16.5007 18.7087 18.0866C19.1004 17.9344 19.5624 18.0165 19.8787 18.3327L21.53 19.9841L21.6052 20.0671C21.9545 20.4961 21.9303 21.1297 21.53 21.53C21.1297 21.9303 20.4962 21.9544 20.0671 21.6052L19.9841 21.53L18.3328 19.8786C18.0165 19.5624 17.9344 19.1003 18.0867 18.7087C16.5007 20.1465 14.3969 21.0238 12.0876 21.0241C7.15213 21.0241 3.1507 17.023 3.15015 12.0876C3.15015 7.15171 7.15177 3.15009 12.0876 3.15009ZM12.0876 5.33563C8.3592 5.33563 5.33569 8.35914 5.33569 12.0876C5.33625 15.8155 8.35952 18.8376 12.0876 18.8376C15.8153 18.837 18.8371 15.8152 18.8376 12.0876C18.8376 8.35948 15.8156 5.33621 12.0876 5.33563Z" fill="#212121"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <a href="/my-account/">
+                                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12.4999 12.5059C14.914 12.5059 17.1498 13.0517 18.8182 13.9854C20.4537 14.9006 21.7499 16.3244 21.7499 18.1279V18.2324C21.751 19.4083 21.7631 21.0233 20.3446 22.1729C19.654 22.7323 18.7039 23.1174 17.4588 23.3682C16.2092 23.6197 14.5917 23.75 12.4999 23.75C10.408 23.75 8.79048 23.6197 7.54087 23.3682C6.29578 23.1174 5.34571 22.7323 4.65513 22.1729C3.23665 21.0233 3.2487 19.4082 3.24986 18.2324V18.1279C3.24986 16.3244 4.54607 14.9006 6.1815 13.9854C7.84988 13.0517 10.0857 12.5059 12.4999 12.5059ZM12.4999 14.541C10.3697 14.541 8.49119 15.0259 7.1815 15.7588C5.84064 16.5092 5.29282 17.3872 5.29282 18.1279C5.29282 19.4892 5.34805 20.1117 5.94419 20.5947C6.28213 20.8685 6.87617 21.1578 7.94517 21.373C9.0097 21.5874 10.4778 21.7148 12.4999 21.7148C14.5219 21.7148 15.99 21.5874 17.0545 21.373C18.1235 21.1578 18.7176 20.8685 19.0555 20.5947C19.6517 20.1117 19.7069 19.4893 19.7069 18.1279C19.7069 17.3871 19.1591 16.5092 17.8182 15.7588C16.5085 15.0259 14.63 14.541 12.4999 14.541Z" fill="#212121"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12.4999 1.25C15.3349 1.25 17.6355 3.53676 17.6356 6.36035C17.6356 9.184 15.335 11.4707 12.4999 11.4707C9.66479 11.4706 7.36411 9.18397 7.36411 6.36035C7.36417 3.53679 9.66482 1.25005 12.4999 1.25ZM12.4999 3.28516C10.7906 3.28521 9.40714 4.66306 9.40708 6.36035C9.40708 8.0577 10.7906 9.43647 12.4999 9.43652C14.2092 9.43652 15.5926 8.05773 15.5926 6.36035C15.5926 4.66302 14.2091 3.28516 12.4999 3.28516Z" fill="#212121"/>
+                                    </svg>
+                                </a>
+                                <a href="/wishlist/" class="header-favorites">
+                                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12.5 5.17338C14.6093 3.35713 16.983 3.09483 18.9453 4.02104C21.0657 5.02197 22.5 7.32368 22.5 9.93998C22.4999 12.5013 21.4633 14.4559 20.1182 16.0201C18.807 17.5447 17.1317 18.7692 15.8662 19.7994C15.4084 20.1721 14.8957 20.5873 14.3711 20.9038C13.8477 21.2197 13.2121 21.5005 12.5 21.5005C11.7879 21.5005 11.1523 21.2197 10.6289 20.9038C10.1043 20.5873 9.59165 20.1721 9.13379 19.7994C7.86832 18.7692 6.193 17.5447 4.88184 16.0201C3.53668 14.4559 2.5001 12.5013 2.5 9.93998C2.5 7.32368 3.93427 5.02197 6.05469 4.02104C8.01704 3.09483 10.3907 3.35713 12.5 5.17338ZM18.0918 5.82963C16.7972 5.21854 15.004 5.33994 13.2314 7.24174C13.0423 7.44462 12.7774 7.5601 12.5 7.5601C12.2226 7.5601 11.9577 7.44462 11.7686 7.24174C9.99601 5.33994 8.20283 5.21854 6.9082 5.82963C5.54109 6.47497 4.5 8.03659 4.5 9.93998C4.50009 11.898 5.27296 13.4076 6.39844 14.7163C7.55778 16.0643 9.01421 17.1223 10.3965 18.2476C10.873 18.6355 11.2781 18.9592 11.6621 19.191C12.0473 19.4234 12.3121 19.5005 12.5 19.5005C12.6879 19.5005 12.9527 19.4234 13.3379 19.191C13.7219 18.9592 14.127 18.6355 14.6035 18.2476C15.9858 17.1223 17.4422 16.0643 18.6016 14.7163C19.727 13.4076 20.4999 11.898 20.5 9.93998C20.5 8.03659 19.4589 6.47497 18.0918 5.82963Z" fill="#212121"/>
+                                    </svg>
+                                </a>
+                                <a href="/cart/" class="header-cart">
+                                    <span class="cart-count"><?php echo WC()->cart->get_cart_contents_count(); ?></span>
+                                    <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M14.7147 7.66895C14.8951 7.15284 15.4556 6.87999 15.9686 7.06348C16.4809 7.24698 16.7472 7.81519 16.5673 8.33105C15.976 10.0254 14.3803 11.2441 12.4999 11.2441C10.6196 11.2439 9.02357 10.0254 8.43249 8.33105C8.25273 7.81545 8.5193 7.24722 9.03112 7.06348C9.54424 6.87976 10.1056 7.15265 10.286 7.66895C10.6092 8.59554 11.4806 9.25558 12.4999 9.25586C13.5193 9.25583 14.3915 8.59565 14.7147 7.66895Z" fill="#212121"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12.9003 3.34961C14.6587 3.34961 15.992 3.34946 17.0389 3.48047C18.0901 3.61205 18.8715 3.87784 19.5184 4.42188C20.1651 4.96586 20.5656 5.69477 20.8866 6.7168C21.2064 7.73506 21.4521 9.06267 21.7762 10.8145C22.2321 13.2784 22.577 15.1422 22.6395 16.5928C22.7022 18.0472 22.4831 19.1148 21.784 19.9688C21.0844 20.823 20.0882 21.2394 18.6649 21.4453C17.2459 21.6505 15.3737 21.6504 12.9003 21.6504H12.0995C9.62597 21.6504 7.75359 21.6506 6.33483 21.4453C4.91199 21.2394 3.91619 20.8229 3.21667 19.9688C2.51754 19.1149 2.29773 18.0472 2.36022 16.5928C2.42255 15.1422 2.76762 13.2785 3.2235 10.8145C3.54761 9.06265 3.79315 7.73504 4.11315 6.7168C4.43436 5.69483 4.83566 4.96583 5.48229 4.42188L5.73131 4.23145C6.32846 3.81424 7.04121 3.59567 7.96081 3.48047C9.00756 3.3494 10.3411 3.34961 12.0995 3.34961H12.9003ZM12.0995 5.33789C10.2911 5.33789 9.10015 5.34067 8.20202 5.45312C7.35455 5.55933 6.98721 5.74075 6.73815 5.9502C6.48905 6.15986 6.24557 6.49307 5.9862 7.31836C5.71151 8.1927 5.48835 9.37868 5.15514 11.1797C4.68813 13.7039 4.37807 15.4036 4.32311 16.6797C4.2704 17.9044 4.47441 18.3896 4.72936 18.7012C4.98415 19.0123 5.41666 19.3044 6.61315 19.4775C7.86024 19.6578 9.56541 19.6621 12.0995 19.6621H12.9003C15.4344 19.6621 17.1394 19.6578 18.3866 19.4775C19.5828 19.3045 20.0145 19.0122 20.2694 18.7012C20.5246 18.3896 20.7294 17.9047 20.6766 16.6797C20.6217 15.4036 20.3116 13.704 19.8446 11.1797C19.5114 9.37855 19.2892 8.19267 19.0145 7.31836C18.7551 6.49274 18.51 6.15993 18.2606 5.9502C18.0115 5.74087 17.6442 5.55923 16.7967 5.45312C15.8986 5.34076 14.7083 5.33789 12.9003 5.33789H12.0995Z" fill="#212121"/>
+                                    </svg>
+                                </a>
+                                <button class="header__burger" type="button" aria-label="Меню">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/burger.svg" alt="burger-icon">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile nav -->
+                    <!-- <div class="header__mobile-overlay"></div> -->
+                    <nav class="header__mobile-nav">
+                        <div class="header__mobile-upper">
+                            <img src="<?php echo get_template_directory_uri(); ?>/assets/img/logo.svg" alt="unico-logo">
+                            <button class="header__mobile-close" type="button" aria-label="Закрыть">&times;</button>
+                        </div>
+                        
+                        <ul class="header__mobile-menu">
+                            <?php
+                            
+                            if ($main_menu) :
+                                foreach ($main_menu as $item) :
+                                    if ($item->menu_item_parent == 0) : 
+                                        
+                                        $is_catalog = (mb_strtolower($item->title) == 'каталог');
+                                        $is_sales   = (mb_strtolower($item->title) == 'скидки');
+                                        
+                                        $link_class = $is_sales ? 'class="sale-color"' : '';
+                                        ?>
+
+                                        <?php if ($is_catalog) : ?>
+                                            <li class="header__mobile-menu-item--catalog">
+                                                <button class="header__mobile-catalog-toggle" type="button">
+                                                    <?php echo $item->title; ?>
+                                                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                                                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.5"/>
+                                                    </svg>
+                                                </button>
+                                                
+                                                <div class="header__mobile-submenu">
+                                                    <?php
+                                                    foreach ($main_menu as $sub_column) :
+                                                        if ($sub_column->menu_item_parent == $item->ID) : ?>
+                                                            
+                                                            <div class="header__mobile-submenu-group">
+                                                                <div class="header__mobile-submenu-title"><?php echo $sub_column->title; ?></div>
+                                                                <ul>
+                                                                    <?php
+                                                                    foreach ($main_menu as $sub_item) :
+                                                                        if ($sub_item->menu_item_parent == $sub_column->ID) : ?>
+                                                                            <li><a href="<?php echo $sub_item->url; ?>"><?php echo $sub_item->title; ?></a></li>
+                                                                        <?php endif;
+                                                                    endforeach; ?>
+                                                                </ul>
+                                                            </div>
+
+                                                        <?php endif;
+                                                    endforeach; ?>
+                                                </div>
+                                            </li>
+                                        <?php else : ?>
+                                            <li>
+                                                <a href="<?php echo $item->url; ?>" <?php echo $link_class; ?>>
+                                                    <?php echo $item->title; ?>
+                                                </a>
+                                            </li>
+                                        <?php endif; ?>
+
+                                    <?php endif;
+                                endforeach;
+                            endif; ?>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="header-search__overlay">
+                    <div class="container">
+                        <div class="header-search__title">Что вы ищите?</div>
+                        <form class="header-search__form" action="/" method="get" role="search">
+                            <div class="header-search__form-inner">
+                                <button class="header-search__submit" type="submit" aria-label="Найти">
+                                    <img src="<?php echo get_template_directory_uri(); ?>/assets/img/search.svg" alt="search">
+                                </button>
+                                <input class="header-search__input" type="search" name="s" placeholder="" autocomplete="off">
+                                <button class="header-search__close" type="button" aria-label="Закрыть">&#10005;</button>
+                            </div>
+                        </form>
+                        <div class="header-search__results" id="header-search-results" aria-live="polite"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <?php
+            $notices = wc_get_notices();
+
+            if ( ! empty( $notices ) ) :
+            ?>
+                <div class="cart-notices">
+                    <?php foreach ( $notices as $type => $notice_group ) : ?>
+                        <?php foreach ( $notice_group as $notice ) : ?>
+                            <div class="cart-notice cart-notice--<?php echo esc_attr($type); ?>">
+                                <?php echo wp_kses_post( $notice['notice'] ); ?>
+                                <button class="notice-close">×</button>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php
+            endif;
+            wc_clear_notices();
+        ?>
+

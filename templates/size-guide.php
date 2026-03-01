@@ -1,0 +1,256 @@
+<?php
+/*
+Template Name: Гайд с размерами
+*/
+get_header();
+?>
+
+<section class="size-guide">
+    <div class="container">
+        <div class="h1-block">
+            <h1 class="h1"><?php the_title(); ?></h1>
+            <?php woocommerce_breadcrumb(); ?>
+        </div>
+        <!-- HOW TO MEASURE -->
+        <div class="size-how">
+            <div class="size-how__image">
+                <?php $img = get_field('sg_how_img') ?: '/assets/img/size-img.jpg'; ?>
+                <img src="<?php echo $img; ?>" alt="size-guide-image">
+            </div>
+            <div class="size-how__content">
+                <h2 class="size-how__title"><?php the_field('sg_how_title'); ?></h2>
+                <p class="size-how__intro"><?php the_field('sg_how_intro'); ?></p>
+                
+                <div class="size-accordion">
+                    <?php for ($i = 1; $i <= 4; $i++) : 
+                        $head = get_field("sg_acc_{$i}_h");
+                        $body = get_field("sg_acc_{$i}_b");
+                        if ($head) : ?>
+                        <div class="size-accordion__item <?php echo ($i === 1) ? 'is-open' : ''; ?>">
+                            <div class="size-accordion__head"><?php echo esc_html($head); ?></div>
+                            <div class="size-accordion__body"><?php echo esc_html($body); ?></div>
+                        </div>
+                    <?php endif; endfor; ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="size-section">
+            <div class="size-section__left">
+                <h2 class="size-section__title">Сравнение размеров</h2>
+                <p class="size-section__txt">Наши размеры соответствуют EU размерной линейки, используйте данную таблицу для подбора необходимого размера</p>
+            </div>
+            <div class="size-table">
+                <div class="size-table__col">
+                    <h4>EU</h4>
+                    <p>34 / XS / 0</p>
+                    <p>36 / S / 1</p>
+                    <p>38 / M / 2</p>
+                    <p>40 / L / 3</p>
+                    <p>42 / XL / 4</p>
+                    <p>44 / 2XL / 5</p>
+                    <p>46 / 3XL / 6</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>RU</h4>
+                    <p>40</p>
+                    <p>42</p>
+                    <p>44</p>
+                    <p>46</p>
+                    <p>48</p>
+                    <p>50</p>
+                    <p>52</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Italy</h4>
+                    <p>38</p>
+                    <p>40</p>
+                    <p>42</p>
+                    <p>44</p>
+                    <p>46</p>
+                    <p>48</p>
+                    <p>50</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>UK</h4>
+                    <p>6</p>
+                    <p>8</p>
+                    <p>10</p>
+                    <p>12</p>
+                    <p>14</p>
+                    <p>16</p>
+                    <p>18</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>US</h4>
+                    <p>4</p>
+                    <p>6</p>
+                    <p>8</p>
+                    <p>10</p>
+                    <p>12</p>
+                    <p>14</p>
+                    <p>16</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="size-section">
+            <div class="size-section__left">
+                <h2 class="size-section__title">Одежда</h2>
+                <p class="size-section__txt">Размеры могут отличаться в зависимости от фасона</p>
+            </div>
+            <div class="size-table">
+                <div class="size-table__col">
+                    <h4>EU</h4>
+                    <p>34 / XS / 0</p>
+                    <p>36 / S / 1</p>
+                    <p>38 / M / 2</p>
+                    <p>40 / L / 3</p>
+                    <p>42 / XL / 4</p>
+                    <p>44 / 2XL / 5</p>
+                    <p>46 / 3XL / 6</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Грудь</h4>
+                    <p>80 - 84</p>
+                    <p>84 - 88</p>
+                    <p>88 - 92</p>
+                    <p>92 - 96</p>
+                    <p>96 - 100</p>
+                    <p>100-104</p>
+                    <p>104 - 108</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Талия</h4>
+                    <p>60 - 64</p>
+                    <p>64 - 68</p>
+                    <p>68 - 72</p>
+                    <p>72 - 76</p>
+                    <p>76 - 80</p>
+                    <p>80 - 84</p>
+                    <p>84 - 88</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Бедра</h4>
+                    <p>88 - 92</p>
+                    <p>92 - 96</p>
+                    <p>96 - 100</p>
+                    <p>100 - 104</p>
+                    <p>104 - 108</p>
+                    <p>108-112</p>
+                    <p>112 - 116</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="size-section">
+            <div class="size-section__left">
+                <h2 class="size-section__title">Оверсайз</h2>
+            </div>
+            <div class="size-table">
+                <div class="size-table__col">
+                    <h4>EU</h4>
+                    <p>32 - 34 / XS</p>
+                    <p>36 - 38 / S</p>
+                    <p>40 - 42 / M</p>
+                    <p>44 / L</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>UK</h4>
+                    <p>4 - 6</p>
+                    <p>8 - 10</p>
+                    <p>12 - 14</p>
+                    <p>16</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>US</h4>
+                    <p>2 - 4</p>
+                    <p>6 - 8</p>
+                    <p>10 - 12</p>
+                    <p>14</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="size-section">
+            <div class="size-section__left">
+                <h2 class="size-section__title">Деним</h2>
+                <p class="size-section__txt">Указанные ниже размеры соответствуют обхвату талии</p>
+            </div>
+            <div class="size-table">
+                <div class="size-table__col">
+                    <h4>EU</h4>
+                    <p>24</p>
+                    <p>25</p>
+                    <p>26</p>
+                    <p>27</p>
+                    <p>28</p>
+                    <p>29</p>
+                    <p>30</p>
+                    <p>31</p>
+                    <p>32</p>
+                    <p>33</p>
+                    <p>34</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>UK</h4>
+                    <p>6</p>
+                    <p></p>
+                    <p>8</p>
+                    <p></p>
+                    <p>10</p>
+                    <p></p>
+                    <p>12</p>
+                    <p></p>
+                    <p>14</p>
+                    <p></p>
+                    <p>16</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>US</h4>
+                    <p>4</p>
+                    <p></p>
+                    <p>6</p>
+                    <p></p>
+                    <p>8</p>
+                    <p></p>
+                    <p>10</p>
+                    <p></p>
+                    <p>12</p>
+                    <p></p>
+                    <p>14</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Талия</h4>
+                    <p>62</p>
+                    <p>64</p>
+                    <p>66</p>
+                    <p>68</p>
+                    <p>70</p>
+                    <p>72</p>
+                    <p>74</p>
+                    <p>76</p>
+                    <p>78</p>
+                    <p>80</p>
+                    <p>82</p>
+                </div>
+                <div class="size-table__col">
+                    <h4>Бедра</h4>
+                    <p>88</p>
+                    <p>92</p>
+                    <p>94</p>
+                    <p>96</p>
+                    <p>98</p>
+                    <p>100</p>
+                    <p>102</p>
+                    <p>104</p>
+                    <p>106</p>
+                    <p>108</p>
+                    <p>110</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<?php get_footer(); ?>
