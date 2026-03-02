@@ -285,6 +285,41 @@ if ( defined( 'JETPACK__VERSION' ) ) {
 	require get_template_directory() . '/inc/jetpack.php';
 }
 
+
+// Фильтрация каталога по бренду и категории через URL-параметры
+add_action( 'pre_get_posts', function ( $query ) {
+    if ( is_admin() || ! $query->is_main_query() ) return;
+    if ( ! is_shop() && ! is_product_category() && ! is_product_tag() ) return;
+
+    $tax_query = (array) $query->get( 'tax_query' );
+
+    // Фильтр по бренду (?filter_brand=slug1,slug2)
+    if ( ! empty( $_GET['filter_brand'] ) ) {
+        $slugs = array_map( 'sanitize_title', explode( ',', $_GET['filter_brand'] ) );
+        $tax_query[] = [
+            'taxonomy' => 'product_brand',
+            'field'    => 'slug',
+            'terms'    => $slugs,
+            'operator' => 'IN',
+        ];
+    }
+
+    // Фильтр по категории на странице магазина (?filter_cat=slug1,slug2)
+    if ( is_shop() && ! empty( $_GET['filter_cat'] ) ) {
+        $slugs = array_map( 'sanitize_title', explode( ',', $_GET['filter_cat'] ) );
+        $tax_query[] = [
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => $slugs,
+            'operator' => 'IN',
+        ];
+    }
+
+    if ( ! empty( $tax_query ) ) {
+        $query->set( 'tax_query', $tax_query );
+    }
+} );
+
 add_filter('get_custom_logo', function($html) {
     return str_replace(
         'custom-logo-link',
@@ -350,8 +385,11 @@ function unico_gift_product_template($template) {
 
 add_filter('woocommerce_add_cart_item_data', function($cart_item_data, $product_id){
 
-    if(isset($_POST['custom_price']) && $_POST['custom_price'] > 0){
-        $cart_item_data['custom_price'] = (float) $_POST['custom_price'];
+    if ( isset( $_POST['custom_price'] ) ) {
+        $price = floatval( sanitize_text_field( wp_unslash( $_POST['custom_price'] ) ) );
+        if ( $price > 0 ) {
+            $cart_item_data['custom_price'] = $price;
+        }
     }
 
     return $cart_item_data;
@@ -360,11 +398,15 @@ add_filter('woocommerce_add_cart_item_data', function($cart_item_data, $product_
 
 add_action('woocommerce_before_calculate_totals', function($cart){
 
-    if (is_admin() && !defined('DOING_AJAX')) return;
+    if ( is_admin() && ! defined('DOING_AJAX') ) return;
+    if ( ! $cart || ! is_a( $cart, 'WC_Cart' ) ) return;
 
-    foreach ($cart->get_cart() as $cart_item) {
-        if(isset($cart_item['custom_price'])){
-            $cart_item['data']->set_price($cart_item['custom_price']);
+    foreach ( $cart->get_cart() as $cart_item ) {
+        if (
+            isset( $cart_item['custom_price'], $cart_item['data'] ) &&
+            is_a( $cart_item['data'], 'WC_Product' )
+        ) {
+            $cart_item['data']->set_price( $cart_item['custom_price'] );
         }
     }
 
@@ -378,6 +420,118 @@ add_action( 'wp_enqueue_scripts', function () {
     ) );
 }, 20 );
 
+/* ── AJAX фильтр + пагинация каталога ── */
+add_action( 'wp_ajax_unico_filter_products',        'unico_filter_products_handler' );
+add_action( 'wp_ajax_nopriv_unico_filter_products', 'unico_filter_products_handler' );
+
+function unico_filter_products_handler() {
+    check_ajax_referer( 'unico_load_more_nonce', 'nonce' );
+
+    $page     = max( 1, intval( $_POST['page'] ?? 1 ) );
+    $per_page = max( 1, intval( $_POST['per_page'] ?? get_option( 'posts_per_page', 12 ) ) );
+    $orderby  = sanitize_key( $_POST['orderby'] ?? 'menu_order' );
+    $cat_id   = intval( $_POST['cat'] ?? 0 );
+
+    // tax_query — базовый: исключаем скрытые товары
+    $tax_query = array(
+        array(
+            'taxonomy' => 'product_visibility',
+            'field'    => 'name',
+            'terms'    => array( 'exclude-from-catalog' ),
+            'operator' => 'NOT IN',
+        ),
+    );
+
+    // Фильтр по категории
+    $filter_cat = ! empty( $_POST['filter_cat'] )
+        ? array_map( 'sanitize_title', explode( ',', $_POST['filter_cat'] ) )
+        : array();
+
+    if ( ! empty( $filter_cat ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_cat',
+            'field'    => 'slug',
+            'terms'    => $filter_cat,
+            'operator' => 'IN',
+        );
+    } elseif ( $cat_id ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_cat',
+            'field'    => 'term_id',
+            'terms'    => $cat_id,
+        );
+    }
+
+    // Фильтр по бренду
+    $filter_brand = ! empty( $_POST['filter_brand'] )
+        ? array_map( 'sanitize_title', explode( ',', $_POST['filter_brand'] ) )
+        : array();
+
+    if ( ! empty( $filter_brand ) ) {
+        $tax_query[] = array(
+            'taxonomy' => 'product_brand',
+            'field'    => 'slug',
+            'terms'    => $filter_brand,
+            'operator' => 'IN',
+        );
+    }
+
+    // Фильтры по WooCommerce атрибутам (pa_size, pa_color и т.д.)
+    foreach ( wc_get_attribute_taxonomies() as $attr ) {
+        $param = 'filter_' . $attr->attribute_name;
+        if ( ! empty( $_POST[ $param ] ) ) {
+            $vals = array_map( 'sanitize_title', explode( ',', $_POST[ $param ] ) );
+            $tax_query[] = array(
+                'taxonomy' => 'pa_' . $attr->attribute_name,
+                'field'    => 'slug',
+                'terms'    => $vals,
+                'operator' => 'IN',
+            );
+        }
+    }
+
+    $ordering = WC()->query->get_catalog_ordering_args( $orderby );
+
+    $args = array(
+        'post_type'      => 'product',
+        'post_status'    => 'publish',
+        'posts_per_page' => $per_page,
+        'paged'          => $page,
+        'orderby'        => $ordering['orderby'],
+        'order'          => $ordering['order'],
+        'tax_query'      => $tax_query,
+    );
+
+    if ( ! empty( $ordering['meta_key'] ) ) {
+        $args['meta_key'] = $ordering['meta_key'];
+    }
+
+    $query = new WP_Query( $args );
+
+    ob_start();
+    if ( $query->have_posts() ) {
+        while ( $query->have_posts() ) {
+            $query->the_post();
+            global $product;
+            $product = wc_get_product( get_the_ID() );
+            if ( $product && $product->is_visible() ) {
+                wc_get_template_part( 'content', 'product' );
+            }
+        }
+        wp_reset_postdata();
+    }
+    $html = ob_get_clean();
+
+    wp_send_json( array(
+        'products'  => $html,
+        'total'     => (int) $query->found_posts,
+        'max_pages' => (int) $query->max_num_pages,
+        'shown'     => (int) min( $page * $per_page, $query->found_posts ),
+        'page'      => $page,
+        'per_page'  => $per_page,
+    ) );
+}
+
 /* ── Load More: товары каталога ── */
 add_action( 'wp_ajax_unico_load_more_products',        'unico_load_more_products_handler' );
 add_action( 'wp_ajax_nopriv_unico_load_more_products', 'unico_load_more_products_handler' );
@@ -385,10 +539,18 @@ add_action( 'wp_ajax_nopriv_unico_load_more_products', 'unico_load_more_products
 function unico_load_more_products_handler() {
     check_ajax_referer( 'unico_load_more_nonce', 'nonce' );
 
-    $page     = max( 1, intval( $_POST['page'] ) );
-    $per_page = max( 1, intval( $_POST['per_page'] ) );
-    $cat_id   = intval( $_POST['cat'] );
-    $orderby  = sanitize_key( isset( $_POST['orderby'] ) ? $_POST['orderby'] : 'menu_order' );
+    $page     = max( 1, intval( $_POST['page']     ?? 1 ) );
+    $per_page = max( 1, intval( $_POST['per_page'] ?? get_option( 'posts_per_page', 12 ) ) );
+    $cat_id   = intval( $_POST['cat'] ?? 0 );
+    $orderby  = sanitize_key( $_POST['orderby'] ?? 'menu_order' );
+
+    if ( ! WC()->query ) {
+        wp_die();
+    }
+
+    if ( ! WC()->query ) {
+        wp_send_json( array( 'products' => '', 'total' => 0, 'max_pages' => 0, 'shown' => 0, 'page' => 1, 'per_page' => $per_page ) );
+    }
 
     $ordering = WC()->query->get_catalog_ordering_args( $orderby );
 

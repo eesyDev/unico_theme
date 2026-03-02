@@ -81,14 +81,17 @@ jQuery(function ($) {
         var total       = parseInt($btn.data('total'), 10);
         var nextPage    = currentPage + 1;
 
-        var action     = type === 'products' ? 'unico_load_more_products' : 'unico_load_more_posts';
         var $container = type === 'products' ? $('.catalog__items') : $('#blog-container');
         var $counter   = $btn.siblings('.pagination__quantity');
 
         $btn.prop('disabled', true).text('Загрузка...');
 
+        // Если на странице каталога с фильтрами — используем unico_filter_products
+        var activeFilters = $btn.data('filters') || {};
+        var useFilterAction = type === 'products' && Object.keys(activeFilters).length > 0;
+
         var postData = {
-            action:   action,
+            action:   useFilterAction ? 'unico_filter_products' : (type === 'products' ? 'unico_load_more_products' : 'unico_load_more_posts'),
             nonce:    unico_ajax.nonce,
             page:     nextPage,
             per_page: perPage,
@@ -97,15 +100,24 @@ jQuery(function ($) {
         if (type === 'products') {
             postData.cat     = $btn.data('cat') || 0;
             postData.orderby = $btn.data('orderby') || 'menu_order';
+            if (useFilterAction) {
+                $.extend(postData, activeFilters);
+            }
         }
 
-        $.post(unico_ajax.ajax_url, postData, function (html) {
-            if (!html) return;
+        $.post(unico_ajax.ajax_url, postData, function (response) {
+            var html     = useFilterAction ? (response && response.products) : response;
+            var newTotal = useFilterAction ? (parseInt(response && response.total,     10) || total)    : total;
+            var newMax   = useFilterAction ? (parseInt(response && response.max_pages, 10) || maxPages) : maxPages;
+
+            if (!html) {
+                $btn.prop('disabled', false).text('Показать больше ↓');
+                return;
+            }
 
             var $newItems = $(html);
             $container.append($newItems);
 
-            // Инициализируем Swiper-навигацию для новых карточек товаров
             if (type === 'products') {
                 setTimeout(function () {
                     $newItems.filter('.product-item').each(function () {
@@ -123,10 +135,10 @@ jQuery(function ($) {
 
             $btn.data('current-page', nextPage).prop('disabled', false);
 
-            var shown = Math.min(nextPage * perPage, total);
-            $counter.text('Показано ' + shown + ' из ' + total);
+            var shown = Math.min(nextPage * perPage, newTotal);
+            $counter.text('Показано ' + shown + ' из ' + newTotal);
 
-            if (nextPage >= maxPages) {
+            if (nextPage >= newMax) {
                 $btn.hide();
             } else {
                 $btn.text('Показать больше ↓');

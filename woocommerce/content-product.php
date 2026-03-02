@@ -25,6 +25,11 @@ $tpl_uri     = get_template_directory_uri();
 if ( $product->is_type( 'variable' ) ) {
     $price_current = $product->get_variation_price( 'min', true );
     $price_regular = $product->get_variation_regular_price( 'min', true );
+    // Если вариации ещё не опубликованы — берём цену самого товара
+    if ( $price_current === '' || $price_current === false ) {
+        $price_current = $product->get_price();
+        $price_regular = $product->get_regular_price();
+    }
 } else {
     $price_current = $product->get_price();
     $price_regular = $product->get_regular_price();
@@ -126,14 +131,16 @@ if ( $swatch_attr_name && $product->is_type( 'variable' ) ) {
 
         <?php if ( ! empty( $swatch_terms ) ) : ?>
             <ul class="product-item__variants">
-                <?php foreach ( $swatch_terms as $i => $term ) :
+                <?php
+                $swatch_shown = 0;
+                foreach ( $swatch_terms as $term ) :
                     $thumb_id  = get_term_meta( $term->term_id, 'thumbnail_id', true );
                     $color_val = get_term_meta( $term->term_id, 'product_attribute_color', true );
                     if ( ! $thumb_id && ! $color_val ) continue;
-                    $var_img   = isset( $color_images[ $term->slug ] ) ? $color_images[ $term->slug ] : '';
+                    $var_img = $color_images[ $term->slug ] ?? '';
                 ?>
                     <li
-                        <?php echo $i === 0 ? 'class="active"' : ''; ?>
+                        <?php echo $swatch_shown === 0 ? 'class="active"' : ''; ?>
                         <?php echo $var_img ? 'data-img="' . esc_url( $var_img ) . '"' : ''; ?>
                     >
                         <?php if ( $thumb_id ) : ?>
@@ -142,6 +149,7 @@ if ( $swatch_attr_name && $product->is_type( 'variable' ) ) {
                             <span style="background-color: <?php echo esc_attr( $color_val ); ?>;"></span>
                         <?php endif; ?>
                     </li>
+                    <?php $swatch_shown++; ?>
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>

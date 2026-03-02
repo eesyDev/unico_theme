@@ -371,3 +371,222 @@ observer.observe(document.body, {
 
 // Первичный запуск
 document.querySelectorAll('.cart-notice').forEach(autoHideNotice);
+
+// Фильтры каталога (AJAX-дропдауны)
+(function () {
+    var dropdowns   = document.querySelectorAll('.filter-dropdown');
+    var $catalog    = document.querySelector('.catalog__items');
+    if (!dropdowns.length || !$catalog) return;
+
+    var perPage  = parseInt($catalog.dataset.perPage, 10) || 12;
+    var catId    = parseInt($catalog.dataset.cat, 10)     || 0;
+    var $loadBtn = document.querySelector('.load-more');
+    var $counter = document.querySelector('.pagination__quantity');
+
+    // ── Открыть/закрыть ──────────────────────────────────
+    function openDropdown(dd) {
+        dd.querySelector('.filter-dropdown__panel').classList.add('is-open');
+    }
+    function closeDropdown(dd) {
+        dd.querySelector('.filter-dropdown__panel').classList.remove('is-open');
+    }
+    function closeAll(except) {
+        dropdowns.forEach(function (dd) { if (dd !== except) closeDropdown(dd); });
+    }
+
+    dropdowns.forEach(function (dd) {
+        dd.querySelector('.filter-dropdown__toggle').addEventListener('click', function (e) {
+            e.stopPropagation();
+            var panel  = dd.querySelector('.filter-dropdown__panel');
+            var isOpen = panel.classList.contains('is-open');
+            closeAll(dd);
+            isOpen ? closeDropdown(dd) : openDropdown(dd);
+        });
+    });
+
+    document.addEventListener('click', function () { closeAll(null); });
+
+    // ── Собрать все активные значения фильтров ────────────
+    function collectFilters() {
+        var filters = {};
+        dropdowns.forEach(function (dd) {
+            var param  = dd.dataset.param;
+            var panel  = dd.querySelector('.filter-dropdown__panel');
+            var radios = panel.querySelectorAll('input[type="radio"]:checked');
+            var checks = panel.querySelectorAll('input[type="checkbox"]:checked');
+
+            if (radios.length) {
+                filters[param] = radios[0].value;
+            } else if (checks.length) {
+                filters[param] = Array.from(checks).map(function (i) { return i.value; }).join(',');
+            }
+        });
+        return filters;
+    }
+
+    // ── Обновить состояние кнопок-тоглов ─────────────────
+    function updateToggles(filters) {
+        dropdowns.forEach(function (dd) {
+            var param  = dd.dataset.param;
+            var toggle = dd.querySelector('.filter-dropdown__toggle');
+            var panel  = dd.querySelector('.filter-dropdown__panel');
+            var checks = panel.querySelectorAll('input[type="checkbox"]:checked');
+            var isRadio = panel.querySelector('input[type="radio"]');
+
+            toggle.classList.toggle('is-active', !isRadio && checks.length > 0);
+
+            if (!isRadio) {
+                var base = toggle.dataset.label || toggle.textContent.replace(/\s*\(\d+\)|\s*↓/g, '').trim();
+                if (!toggle.dataset.label) toggle.dataset.label = base;
+                toggle.textContent = checks.length ? base + ' (' + checks.length + ')' : base + ' ↓';
+            }
+        });
+    }
+
+    // ── AJAX-запрос ───────────────────────────────────────
+    function applyFilters(filters, page) {
+        page = page || 1;
+
+        $catalog.style.opacity = '0.5';
+        $catalog.style.pointerEvents = 'none';
+
+        var postData = Object.assign({
+            action:   'unico_filter_products',
+            nonce:    (typeof unico_ajax !== 'undefined') ? unico_ajax.nonce : '',
+            page:     page,
+            per_page: perPage,
+            cat:      catId,
+        }, filters);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', (typeof unico_ajax !== 'undefined') ? unico_ajax.ajax_url : '/wp-admin/admin-ajax.php');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        xhr.onload = function () {
+            $catalog.style.opacity = '';
+            $catalog.style.pointerEvents = '';
+
+            var res;
+            try { res = JSON.parse(xhr.responseText); } catch (e) { return; }
+
+            // Заменяем товары
+            $catalog.innerHTML = res.products || '';
+
+            // Обновляем счётчик
+            if ($counter) {
+                $counter.textContent = 'Показано ' + res.shown + ' из ' + res.total;
+            }
+
+            // Обновляем кнопку "Показать больше"
+            if ($loadBtn) {
+                if (res.max_pages > 1) {
+                    $loadBtn.style.display = '';
+                    $loadBtn.dataset.currentPage = page;
+                    $loadBtn.dataset.maxPages    = res.max_pages;
+                    $loadBtn.dataset.total       = res.total;
+                    $loadBtn.dataset.perPage     = perPage;
+                    // Сохраняем активные фильтры для следующих страниц
+                    $($loadBtn).data('filters', filters);
+                    $($loadBtn).data('orderby', filters.orderby || 'menu_order');
+                } else {
+                    $loadBtn.style.display = 'none';
+                }
+            }
+
+            // Обновляем URL (без перезагрузки)
+            var url = new URL(window.location.href);
+            url.search = '';
+            Object.keys(filters).forEach(function (k) {
+                if (filters[k]) url.searchParams.set(k, filters[k]);
+            });
+            history.replaceState(null, '', url.toString());
+
+            // Реинициализируем Swiper в новых карточках
+            setTimeout(function () {
+                $catalog.querySelectorAll('.product-item').forEach(function (item) {
+                    var swiper  = item.querySelector('.product-item__images-slider');
+                    var btnNext = item.querySelector('.inner-next');
+                    var btnPrev = item.querySelector('.inner-prev');
+                    if (swiper && btnNext && btnPrev) {
+                        btnNext.addEventListener('click', function (e) { e.preventDefault(); if (swiper.swiper) swiper.swiper.slideNext(); });
+                        btnPrev.addEventListener('click', function (e) { e.preventDefault(); if (swiper.swiper) swiper.swiper.slidePrev(); });
+                    }
+                });
+            }, 200);
+        };
+
+        var params = Object.keys(postData).map(function (k) {
+            return encodeURIComponent(k) + '=' + encodeURIComponent(postData[k]);
+        }).join('&');
+
+        xhr.send(params);
+    }
+
+    // ── Слушаем изменения в фильтрах ─────────────────────
+    dropdowns.forEach(function (dd) {
+        dd.querySelector('.filter-dropdown__panel').addEventListener('change', function () {
+            var filters = collectFilters();
+            updateToggles(filters);
+            closeAll(null);
+            applyFilters(filters, 1);
+        });
+    });
+
+    // ── При загрузке: восстановить состояние из URL ───────
+    (function restoreFromUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var hasFilter = false;
+        dropdowns.forEach(function (dd) {
+            var param = dd.dataset.param;
+            var val   = params.get(param);
+            if (!val) return;
+            hasFilter = true;
+            val.split(',').forEach(function (v) {
+                var input = dd.querySelector('input[value="' + v + '"]');
+                if (input) input.checked = true;
+            });
+        });
+        if (hasFilter) updateToggles(collectFilters());
+    }());
+}());
+
+// Бренды: алфавитный фильтр
+(function () {
+    const filterLinks = document.querySelectorAll('.brands-filter .products-filter__link');
+    if (!filterLinks.length) return;
+
+    // Плавный скролл к секции по клику на букву
+    filterLinks.forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').slice(1);
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            const offset = target.getBoundingClientRect().top + window.scrollY - 100;
+            window.scrollTo({ top: offset, behavior: 'smooth' });
+        });
+    });
+
+    // Подсветка активной буквы при скролле
+    const groups = document.querySelectorAll('.brands-group[id]');
+    if (!groups.length) return;
+
+    function updateActiveLink() {
+        const scrollY = window.scrollY + 120;
+        let currentId = null;
+
+        groups.forEach(function (group) {
+            if (group.offsetTop <= scrollY) {
+                currentId = group.id;
+            }
+        });
+
+        filterLinks.forEach(function (link) {
+            const href = link.getAttribute('href').slice(1);
+            link.classList.toggle('active', href === currentId);
+        });
+    }
+
+    window.addEventListener('scroll', updateActiveLink, { passive: true });
+    updateActiveLink();
+}());
