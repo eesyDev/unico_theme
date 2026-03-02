@@ -106,9 +106,9 @@ jQuery(function ($) {
         }
 
         $.post(unico_ajax.ajax_url, postData, function (response) {
-            var html      = useFilterAction ? response.products : response;
-            var newTotal  = useFilterAction ? response.total  : total;
-            var newMax    = useFilterAction ? response.max_pages : maxPages;
+            var html     = useFilterAction ? (response && response.products) : response;
+            var newTotal = useFilterAction ? (parseInt(response && response.total,     10) || total)    : total;
+            var newMax   = useFilterAction ? (parseInt(response && response.max_pages, 10) || maxPages) : maxPages;
 
             if (!html) {
                 $btn.prop('disabled', false).text('Показать больше ↓');

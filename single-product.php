@@ -4,6 +4,7 @@ get_header();
 
 <main class="product-page">
     <div class="container">
+        <?php woocommerce_output_all_notices(); ?>
         <?php while ( have_posts() ) : the_post(); global $product; ?>
             <div class="product-page__gallery">
                 <!-- ГАЛЕРЕЯ -->

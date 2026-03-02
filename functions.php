@@ -385,8 +385,11 @@ function unico_gift_product_template($template) {
 
 add_filter('woocommerce_add_cart_item_data', function($cart_item_data, $product_id){
 
-    if(isset($_POST['custom_price']) && $_POST['custom_price'] > 0){
-        $cart_item_data['custom_price'] = (float) $_POST['custom_price'];
+    if ( isset( $_POST['custom_price'] ) ) {
+        $price = floatval( sanitize_text_field( wp_unslash( $_POST['custom_price'] ) ) );
+        if ( $price > 0 ) {
+            $cart_item_data['custom_price'] = $price;
+        }
     }
 
     return $cart_item_data;
@@ -395,11 +398,15 @@ add_filter('woocommerce_add_cart_item_data', function($cart_item_data, $product_
 
 add_action('woocommerce_before_calculate_totals', function($cart){
 
-    if (is_admin() && !defined('DOING_AJAX')) return;
+    if ( is_admin() && ! defined('DOING_AJAX') ) return;
+    if ( ! $cart || ! is_a( $cart, 'WC_Cart' ) ) return;
 
-    foreach ($cart->get_cart() as $cart_item) {
-        if(isset($cart_item['custom_price'])){
-            $cart_item['data']->set_price($cart_item['custom_price']);
+    foreach ( $cart->get_cart() as $cart_item ) {
+        if (
+            isset( $cart_item['custom_price'], $cart_item['data'] ) &&
+            is_a( $cart_item['data'], 'WC_Product' )
+        ) {
+            $cart_item['data']->set_price( $cart_item['custom_price'] );
         }
     }
 
@@ -532,10 +539,18 @@ add_action( 'wp_ajax_nopriv_unico_load_more_products', 'unico_load_more_products
 function unico_load_more_products_handler() {
     check_ajax_referer( 'unico_load_more_nonce', 'nonce' );
 
-    $page     = max( 1, intval( $_POST['page'] ) );
-    $per_page = max( 1, intval( $_POST['per_page'] ) );
-    $cat_id   = intval( $_POST['cat'] );
-    $orderby  = sanitize_key( isset( $_POST['orderby'] ) ? $_POST['orderby'] : 'menu_order' );
+    $page     = max( 1, intval( $_POST['page']     ?? 1 ) );
+    $per_page = max( 1, intval( $_POST['per_page'] ?? get_option( 'posts_per_page', 12 ) ) );
+    $cat_id   = intval( $_POST['cat'] ?? 0 );
+    $orderby  = sanitize_key( $_POST['orderby'] ?? 'menu_order' );
+
+    if ( ! WC()->query ) {
+        wp_die();
+    }
+
+    if ( ! WC()->query ) {
+        wp_send_json( array( 'products' => '', 'total' => 0, 'max_pages' => 0, 'shown' => 0, 'page' => 1, 'per_page' => $per_page ) );
+    }
 
     $ordering = WC()->query->get_catalog_ordering_args( $orderby );
 
