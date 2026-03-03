@@ -1,12 +1,12 @@
-<section class="new-products">
+<section class="collection">
         <div class="container">
-            <div сlass="new-products__wrapper">
-                <div class="new-products__heading">
-                    <h2 class="h2">Новинки</h2>
-                    <div class="new-products__heading-right">
-                        <?php $novinki_link = get_term_link( 'novinki', 'product_cat' ); ?>
-                        <a href="<?php echo esc_url( is_wp_error( $novinki_link ) ? wc_get_page_permalink( 'shop' ) : $novinki_link ); ?>" class="button--grey">Смотреть все</a>
-                        <div class="new-products__controls">
+            <div сlass="collection__wrapper">
+                <div class="collection__heading">
+                    <h2 class="h2">Коллекция Essentiel</h2>
+                    <div class="collection__heading-right">
+                        <?php $essentiel_link = get_term_link( 'kollekcziya-essentiel', 'product_cat' ); ?>
+                        <a href="<?php echo esc_url( is_wp_error( $essentiel_link ) ? wc_get_page_permalink( 'shop' ) : $essentiel_link ); ?>" class="button--grey">Смотреть все</a>
+                        <div class="collection__controls">
                             <button class="prev-btn swiper-button-prev">
                                 <img src="/assets/img/arrow-left.svg" alt="prev" loading="lazy">
                             </button>
@@ -16,19 +16,19 @@
                         </div>
                     </div>
                 </div>
-                <swiper-container class="new-products__slider" init="false">
+                <swiper-container class="collection-products__slider" init="false">
                     <?php
-                    $novinki_query = new WP_Query( [
+                    $collection_query = new WP_Query( [
                         'post_type'      => 'product',
                         'posts_per_page' => 12,
                         'tax_query'      => [ [
                             'taxonomy' => 'product_cat',
                             'field'    => 'slug',
-                            'terms'    => 'novinki',
+                            'terms'    => 'kollekcziya-essentiel',
                         ] ],
                     ] );
-                    if ( $novinki_query->have_posts() ) :
-                        while ( $novinki_query->have_posts() ) : $novinki_query->the_post();
+                    if ( $collection_query->have_posts() ) :
+                        while ( $collection_query->have_posts() ) : $collection_query->the_post();
                             global $product;
                             $product = wc_get_product( get_the_ID() );
                     ?>

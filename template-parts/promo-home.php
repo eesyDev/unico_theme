@@ -1,12 +1,14 @@
-<section class="new-products">
+
+<section class="promo">
         <div class="container">
-            <div сlass="new-products__wrapper">
-                <div class="new-products__heading">
-                    <h2 class="h2">Новинки</h2>
-                    <div class="new-products__heading-right">
-                        <?php $novinki_link = get_term_link( 'novinki', 'product_cat' ); ?>
-                        <a href="<?php echo esc_url( is_wp_error( $novinki_link ) ? wc_get_page_permalink( 'shop' ) : $novinki_link ); ?>" class="button--grey">Смотреть все</a>
-                        <div class="new-products__controls">
+            <div class="promo__wrapper">
+                <div class="promo__heading">
+                    <div class="promo__heading-top">
+                        <h2 class="h2">Скидки</h2>
+                        <a href="<?php echo esc_url( wc_get_page_permalink( 'shop' ) ); ?>" class="button--black medium">Смотреть все</a>
+                    </div>
+                    <div class="promo__heading-bottom">
+                        <div class="promo__controls">
                             <button class="prev-btn swiper-button-prev">
                                 <img src="/assets/img/arrow-left.svg" alt="prev" loading="lazy">
                             </button>
@@ -16,19 +18,17 @@
                         </div>
                     </div>
                 </div>
-                <swiper-container class="new-products__slider" init="false">
+                <swiper-container class="promo__slider" init="false">
                     <?php
-                    $novinki_query = new WP_Query( [
+                    $sale_ids    = wc_get_product_ids_on_sale();
+                    $sale_query  = new WP_Query( [
                         'post_type'      => 'product',
                         'posts_per_page' => 12,
-                        'tax_query'      => [ [
-                            'taxonomy' => 'product_cat',
-                            'field'    => 'slug',
-                            'terms'    => 'novinki',
-                        ] ],
+                        'post__in'       => ! empty( $sale_ids ) ? $sale_ids : [ 0 ],
+                        'orderby'        => 'post__in',
                     ] );
-                    if ( $novinki_query->have_posts() ) :
-                        while ( $novinki_query->have_posts() ) : $novinki_query->the_post();
+                    if ( $sale_query->have_posts() ) :
+                        while ( $sale_query->have_posts() ) : $sale_query->the_post();
                             global $product;
                             $product = wc_get_product( get_the_ID() );
                     ?>
