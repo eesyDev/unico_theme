@@ -16,7 +16,6 @@
  */
 
 defined('ABSPATH') || exit;
-get_header();
 ?>
 
 <section class="cart-page">
@@ -153,5 +152,3 @@ get_header();
 
 
 <?php do_action( 'woocommerce_after_cart' ); ?>
-
-<?php get_footer(); ?>

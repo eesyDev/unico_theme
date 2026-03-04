@@ -38,6 +38,20 @@ $sort_options = [
 ];
 ?>
 
+<?php if ( is_tax( 'product_brand' ) ) :
+    $brand = get_queried_object();
+?>
+<section class="brand-page__header">
+    <div class="container">
+        <h1 class="h1"><?php echo esc_html( $brand->name ); ?></h1>
+        <?php if ( ! empty( $brand->description ) ) : ?>
+            <span></span>
+            <p class="brand-page__brand-txt"><?php echo wp_kses_post( $brand->description ); ?></p>
+        <?php endif; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <main id="primary">
 <section class="catalog">
     <div class="container">
