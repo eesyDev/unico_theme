@@ -674,8 +674,9 @@ function custom_wc_breadcrumb_for_posts( $crumbs, $breadcrumb ) {
 // Код для хлебных крошек в записях чтобы они брали родителем стр. Блога
 
 add_filter('loop_shop_per_page', function($cols) {
-    return 24; // поставь нужное число
+    return 24; 
 }, 20);
+
 
 add_filter( 'render_block', function( $block_content, $block ) {
     if ( $block['blockName'] === 'woocommerce/checkout' ) {                                                         

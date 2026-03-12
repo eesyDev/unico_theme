@@ -16,7 +16,6 @@
  */
 
 defined('ABSPATH') || exit;
-get_header();
 ?>
 
 <section class="cart-page">
@@ -68,7 +67,6 @@ get_header();
                                             value="1">
                                         <span><?php echo esc_html( $cart_item['quantity'] ); ?></span>
                                     <?php else : ?>
-                                        <button type="button" class="qty-btn qty-minus">−</button>
                                         <?php woocommerce_quantity_input( array(
                                             'input_name'  => "cart[{$cart_item_key}][qty]",
                                             'input_value' => $cart_item['quantity'],
@@ -76,7 +74,6 @@ get_header();
                                             'max_value'   => $_product->get_max_purchase_quantity(),
                                             'hidden'      => false,
                                         ), $_product ); ?>
-                                        <button type="button" class="qty-btn qty-plus">+</button>
                                     <?php endif; ?>
                                 </div>
                                 <div class="cart-item__subtotal">
@@ -155,5 +152,3 @@ get_header();
 
 
 <?php do_action( 'woocommerce_after_cart' ); ?>
-
-<?php get_footer(); ?>

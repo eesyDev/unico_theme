@@ -32,10 +32,17 @@ do_action( 'woocommerce_before_add_to_cart_form' ); ?>
 		<p class="stock out-of-stock"><?php echo esc_html( apply_filters( 'woocommerce_out_of_stock_message', __( 'This product is currently out of stock and unavailable.', 'woocommerce' ) ) ); ?></p>
 	<?php else : ?>
 		<table class="variations" cellspacing="0" role="presentation">
-			<tbody>
+			<tbody class="variations__inner">
 				<?php foreach ( $attributes as $attribute_name => $options ) : ?>
-					<tr>
-						<th class="label"><label for="<?php echo esc_attr( sanitize_title( $attribute_name ) ); ?>"><?php echo wc_attribute_label( $attribute_name ); // WPCS: XSS ok. ?></label></th>
+					<tr class="product-page__attr">
+						<th class="label">
+							<label class="product-page__attr-upper" for="<?php echo esc_attr( sanitize_title( $attribute_name ) ); ?>">
+									<span>Выберите <?php echo wc_attribute_label( $attribute_name ); // WPCS: XSS ok. ?>
+									<?php if ( 'pa_size' === $attribute_name ) : ?> </span>
+										<a href="<?php echo esc_url( get_permalink( get_page_by_path( 'size-guide' ) ) ); ?>" class="product-page__attr-guide">Как выбрать размер?</a>
+								<?php endif; ?>
+							</label>
+						</th>
 						<td class="value">
 							<?php
 								wc_dropdown_variation_attribute_options(
@@ -67,8 +74,9 @@ do_action( 'woocommerce_before_add_to_cart_form' ); ?>
 				/**
 				 * Hook: woocommerce_before_single_variation.
 				 */
-				do_action( 'woocommerce_before_single_variation' );
-
+				do_action( 'woocommerce_before_single_variation' ); ?>
+			<div class="add_to_cart_wrap">		
+				<?php		
 				/**
 				 * Hook: woocommerce_single_variation. Used to output the cart button and placeholder for variation data.
 				 *
@@ -78,16 +86,30 @@ do_action( 'woocommerce_before_add_to_cart_form' ); ?>
 				 */
 				do_action( 'woocommerce_single_variation' );
 
+				echo do_shortcode( '[ti_wishlists_addtowishlist]' );
+
 				/**
 				 * Hook: woocommerce_after_single_variation.
 				 */
 				do_action( 'woocommerce_after_single_variation' );
-			?>
+				?>
+			</div>
+			<div class="availability">
+				<?php
+				$availability = $product->get_availability();
+				if ( ! empty( $availability['availability'] ) ) :
+				?>
+					<p class="stock <?php echo esc_attr( $availability['class'] ); ?>">
+						<?php echo esc_html( $availability['availability'] ); ?>
+					</p>
+				<?php endif; ?>
+			</div>
 		</div>
+
+
 	<?php endif; ?>
 
 	<?php do_action( 'woocommerce_after_variations_form' ); ?>
 </form>
-
 <?php
 do_action( 'woocommerce_after_add_to_cart_form' );

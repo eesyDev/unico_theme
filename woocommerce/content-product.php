@@ -67,22 +67,22 @@ if ( $swatch_attr_name && $product->is_type( 'variable' ) ) {
 ?>
 
 <div class="product-item">
-    <a href="<?php the_permalink(); ?>" class="product-item__image">
+    <div class="product-item__image">
+        <a href="<?php the_permalink(); ?>" class="product-item__image-link" aria-label="<?php the_title_attribute(); ?>"></a>
 
         <div class="product-item__bar">
-            <?php if ( $is_sale || $is_new ) : ?>
-                <span class="label label--black">
-                    <?php echo $is_sale ? 'Sale' : 'Новинка'; ?>
-                </span>
-            <?php endif; ?>
-
+            <div class="labels">
+                <?php if ( $is_sale || $is_new ) : ?>
+                    <span class="label label--black">
+                        <?php echo $is_sale ? 'Sale' : 'Новинка'; ?>
+                    </span>
+                <?php endif; ?>
+            </div>
             <div class="favorite">
                 <?php echo do_shortcode("[ti_wishlists_addtowishlist loop=yes]")?>
-                <!-- <img src="<?php echo esc_url( $tpl_uri ); ?>/assets/img/like-o.svg" alt="" loading="lazy" class="favorite-o">
-                <img src="<?php echo esc_url( $tpl_uri ); ?>/assets/img/like-f.svg" alt="" loading="lazy" class="favorite-f"> -->
             </div>
         </div>
-        
+
         <swiper-container
             class="product-item__images-slider"
             nested="true"
@@ -113,7 +113,7 @@ if ( $swatch_attr_name && $product->is_type( 'variable' ) ) {
             </div>
         <?php endif; ?>
 
-    </a>
+    </div>
 
     <div class="product-item__info">
         <a href="<?php the_permalink(); ?>" class="product-item__title">
